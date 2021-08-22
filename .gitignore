@@ -9,6 +9,8 @@
 !README.md
 !LICENSE
 
+!install.sh
+
 # ...even if they are in subdirectories
 
 !*/
