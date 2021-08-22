@@ -11,6 +11,8 @@
 
 !install.sh
 
+!*.sh
+
 # ...even if they are in subdirectories
 
 !*/
