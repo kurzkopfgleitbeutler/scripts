@@ -21,7 +21,7 @@ $script_name - automatically open an sfdx authenticated org in browser
 
 Usage:
 	$script_name -h
-	$script_name -q -l foo
+	$script_name -q -l org_alias
 
 Options:
 	-h --help	Show this screen.
