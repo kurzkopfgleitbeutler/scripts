@@ -12,10 +12,8 @@ scope () (
     script_path="$(dirname "$(readlink -e -- "$0")")"
     script_name="$(basename "$0")"
     num_args=2
-    usage="$script_name [-q] [-l] SHORTALIAS FULLNAME"
-    tagline="easily bootstrap a shell script project"
     logfile_name=/dev/null
-    runtime_dependencies="sudo ssh-askpass awk xclip"
+    runtime_dependencies="sudo ssh-askpass awk xclip getopt"
     export SUDO_ASKPASS="$(which ssh-askpass)"
     unset quiet
     unset distname
@@ -24,20 +22,47 @@ scope () (
     distname="$(awk -F'=' '/^ID=/ {print tolower($2)}' /etc/*-release)"
     targetdir="/usr/local/bin"
 
+    # --------- HELP PAGE ------------
+
+    help=$(cat <<EOF
+$script_name - easily bootstrap a shell script project
+
+Usage:
+	$script_name -h
+	$script_name -q -l short_alias full_name
+
+Options:
+	-h --help	Show this screen.
+	-l --log	Write log to file $logfile_name.
+	-q --quiet	Don't write to stdout.
+	--		End of options.
+EOF
+	)
+
     # -------- FLAG PARSING ----------
 
-    while getopts 'lq' c
+    parsed_args=$(getopt -a -n $script_name -o hlq --long help,log,quiet -- "$@")
+    valid_args=$?
+    if [ "$valid_args" != "0" ]
+    then
+	printf "%b\n" "$help"
+	exit 2
+    fi
+    eval set -- "$parsed_args"
+    while :
     do
-	case $c in
-	    l) logfile_name="log_${script_name%.*}.txt"; shift ;;
-	    q) quiet=1; shift ;;
-	    --) shift; break ;;
-	    *) printf "%b\n" "[ERROR] unsupported flag: $1\n$usage"; exit ;;
+	case "$1" in
+	    -h | --help)  printf "%b\n" "$help" ; exit ;;
+	    -l | --log)   logfile_name="log_${script_name%.*}.txt" ; shift ;;
+	    -q | --quiet) quiet=1 ; shift ;;
+	    --)           shift ; break ;;
+	    *)            printf "%b\n" "Unexpected option: $1 - this should not happen.\n$help" ; exit 2 ;;
 	esac
     done
+
     if [ "$#" -ne "$num_args" ]
     then
-	echo "[ERROR] wrong number of arguments: should be $num_args\n$usage"
+	printf "%b\n" "[ERROR] wrong number of arguments: should be $num_args\n$help"
 	exit
     fi
 
@@ -68,10 +93,8 @@ scope ()
     script_path="$(dirname "$(readlink -e -- "$0")")"
     script_name="$(basename "$0")"
     num_args=1
-    usage="$script_name [-q] [-l] ARG1"
-    tagline"tagline of script"
     logfile_name=/dev/null
-    runtime_dependencies="awk"
+    runtime_dependencies="getopt awk"
     export SUDO_ASKPASS="$(which ssh-askpass)"
     unset quiet
     unset distname
@@ -84,21 +107,48 @@ scope ()
     then
     fi
 
+    # --------- HELP PAGE ------------
+
+    help=$(cat<<HELPAGE
+$script_name - TODO:tagline
+
+Usage:
+	$script_name -h
+	$script_name -q -l TODO:foo
+
+Options:
+	-h --help	Show this screen.
+	-l --log	Write log to file $logfile_name.
+	-q --quiet	Don't write to stdout.
+	--		End of options.
+HELPAGE
+	)
+
     # -------- FLAG PARSING ----------
 
-    while getopts 'lq' c
+    parsed_args=$(getopt -a -n $script_name -o hlq --long help,log,quiet -- "$@")
+    valid_args=$?
+    if [ "$valid_args" != "0" ]
+    then
+	printf "%b\\n" "$help"
+	exit 2
+    fi
+    eval set -- "$parsed_args"
+    while :
     do
-	case $c in
-	    l) logfile_name="log_${script_name%.*}.txt"; shift ;;
-	    q) quiet=1; shift ;;
-	    --) shift; break ;;
-	    *) printf "%b\\n" "[ERROR] unsupported flag: $1\\n$usage"; exit ;;
+	case "$1" in
+	    -h | --help)  printf "%b\\n" "$help" ; exit ;;
+	    -l | --log)   logfile_name="log_${script_name%.*}.txt" ; shift ;;
+	    -q | --quiet) quiet=1 ; shift ;;
+	    --)           shift ; break ;;
+	    *)            printf "%b\\n" "Unexpected option: $1 - this should not happen.\\n$help" ; exit 2 ;;
 	esac
     done
+
     if [ "$#" -ne "$num_args" ]
     then
-	echo "[ERROR] wrong number of arguments: should be $num_args\\n$usage"
-	exit
+	printf "%b\\n" "[ERROR] wrong number of arguments: should be $num_args\\n$help"
+	exit 2
     fi
 
     # ---------- ARGUMENTS -----------
@@ -116,8 +166,8 @@ TOKEN
     # ---------- FUNCTIONS -----------
 
     hello () {
-	printf "%b\\n" ""	# newline between log entries
-	printf "%b\\n" "[BEGIN] $(date -Iseconds)\\n$script_path/$script_name\\n$usage\\n$tagline"
+	# printf "%b\\n" ""	# newline between log entries
+	printf "%b\\n" "[BEGIN] $(date -Iseconds) $script_path/$script_name"
     }
     log () {
 	if [ -n "$quiet" ]
@@ -179,9 +229,8 @@ EOF
     # ---------- FUNCTIONS -----------
 
     hello () {
-	printf "%b\n" ""	# newline between log entries
-	printf "%b\n" "[BEGIN] $(date -Iseconds)\n$script_path/$script_name\n$usage"
-	printf "%b\n" "$tagline"
+	# printf "%b\n" ""	# newline between log entries
+	printf "%b\n" "[BEGIN] $(date -Iseconds) $script_path/$script_name"
     }
     log () {
 	if [ -n "$quiet" ]
@@ -218,9 +267,6 @@ EOF
 	   check_for_app $runtime_dependencies
 
 	   mkdir "$SUBDIR"
-
-
-
 
 	   printf "%b\n" "$template_script" > $SUBDIR/$FH
 	   #" > $SUBDIR/wrap-$FH
