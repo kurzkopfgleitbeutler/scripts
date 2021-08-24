@@ -98,15 +98,17 @@ EOF
 	then
 	    if [ -n "$(which rofi)" ]
 	    then
-		pick=$( sfdx auth:list | tail -n +4 | rofi -threads 0 -dmenu -i -p "Open which org?" | awk '{ print $1 }' )
+		arg=$( sfdx auth:list | tail -n +4 | rofi -threads 0 -dmenu -i -p "Open which org?" | awk '{ print $1 }' )
 	    else
 		sfdx auth:list
-		read -p "Open which org? " pick
+		read -p "Open which org? " arg
 	    fi
-	    openorg "$pick"
+	    printf "%b\n" "Opening org $arg..."
+	    openorg "$arg"
 	else
 	    for arg in $@
 	    do
+		printf "%b\n" "Opening org $arg..."
 		openorg "$arg"
 	    done
 	fi
