@@ -52,12 +52,6 @@ EOF
 	esac
     done
 
-    if [ "$#" -ne "$num_args" ]
-    then
-	printf "%b\n" "[ERROR] wrong number of arguments: should be $num_args\n$help"
-	exit
-    fi
-
     # ---------- ARGUMENTS -----------
 
 
@@ -76,12 +70,7 @@ EOF
 	    "$@" | tee -a $logfile_name
 	fi
     }
-
-    # ---------- MAIN ----------------
-
-    main () {
-	hello
-
+    openorg () {
 	(
 	    f=$(sfdx force:org:open -r -u "$1")
 	    url=${f#*URL: }
@@ -97,6 +86,31 @@ EOF
 		fi
 	    done
 	) >/dev/null 2>&1 &
+
+    }
+
+    # ---------- MAIN ----------------
+
+    main () {
+	hello
+
+	if [ "$#" -eq 0 ]
+	then
+	    if [ -n "$(which rofi)" ]
+	    then
+		pick=$( sfdx auth:list | tail -n +4 | rofi -threads 0 -dmenu -i -p "Open which org?" | awk '{ print $1 }' )
+	    else
+		sfdx auth:list
+		read -p "Open which org? " pick
+	    fi
+	    openorg "$pick"
+	else
+	    for arg in $@
+	    do
+		openorg "$arg"
+	    done
+	fi
+
 
     }
     log main $@
