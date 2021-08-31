@@ -103,8 +103,11 @@ EOF
 		sfdx auth:list
 		read -p "Open which org? " arg
 	    fi
-	    printf "%b\n" "Opening org $arg..."
-	    openorg "$arg"
+	    if [ -n "$arg" ]
+	    then
+		printf "%b\n" "Opening org $arg..."
+		openorg "$arg"
+	    fi
 	else
 	    for arg in $@
 	    do
