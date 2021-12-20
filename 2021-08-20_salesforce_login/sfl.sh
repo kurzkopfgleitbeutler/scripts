@@ -98,7 +98,7 @@ EOF
 	then
 	    if [ -n "$(which rofi)" ]
 	    then
-		arg=$( sfdx auth:list | tail -n +4 | rofi -threads 0 -dmenu -i -p "Open which org?" | awk '{ print $1 }' )
+		arg=$( sfdx auth:list | tail -n +4 | rofi -threads 0 -dmenu -i -auto-select -p "Open which org?" | awk '{ print $1 }' )
 	    else
 		sfdx auth:list
 		read -p "Open which org? " arg
