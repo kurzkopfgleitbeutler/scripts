@@ -100,25 +100,40 @@ HELPAGE
     	hello
 	check_for_app $runtime_dependencies
 
-	if [ "$#" = 1 ]
-	then
-	    receiver=$( kdeconnect-cli --list-available --name-only | rofi -threads 0 -dmenu -i -auto-select -p "Send to which device?" )
-	    if [ -n "$receiver" ]
-	    then
-		kdeconnect-cli --name "$receiver" --share "$(realpath $1)"
-	    fi
-	fi
-
+	# sender -> message -> receiver
 	if [ "$#" = 2 ]
 	then
-	    available=$(kdeconnect-cli --list-available --name-only)
-	    # https://stackoverflow.com/questions/229551/how-to-check-if-a-string-contains-a-substring-in-bash/20460402#20460402
-	    if [ -z "${available##*$1*}" ] && [ -z "$1" -o -n "$available" ]
+	    receiver="$1"
+	    shift
+	else
+	    receiver=$( kdeconnect-cli --list-available --name-only | rofi -threads 0 -dmenu -i -auto-select -p "Send to which device?" )
+	fi
+	message="$1"
+
+	# https://stackoverflow.com/questions/229551/how-to-check-if-a-string-contains-a-substring-in-bash/20460402#20460402
+	# if [ -z "${available##*$receiver*}" ] && [ -z "$receiver" -o -n "$available" ]
+	available=$(kdeconnect-cli --list-available --name-only)
+	if [ -z "${available##*$receiver*}" ]
+	then
+	    if [ -d "$message" ]
 	    then
-		kdeconnect-cli --name "$1" --share "$(realpath $2)"
+		printf "%b\n" "Sending directories is not yet fully supported. Proceed with care!\nTODO:\n\tmultilevel dirs\n\tremoving zip after sharing\n\tzip name collisions"
+		exit 1
+
+		zipfile="$(printf "%b" "$message" | awk -F'/' '{ print $(NF) }')"
+		if [ -z "$zipfile" ]
+		then
+		    zipfile="$(printf "%b" "$message" | awk -F'/' '{ print $(NF-1) }')"
+		fi
+		zipfile="${zipfile}.zip"
+
+		zip -r "$zipfile" "$message"
+		kdeconnect-cli --name "$receiver" --share "$(realpath $zipfile)"
+		# BUG: if I rm the zipfile after this, sending fails, even if I "&& wait && rm" on it
+	    else
+		kdeconnect-cli --name "$receiver" --share "$(realpath $message)"
 	    fi
 	fi
-
 
     }
     log main $@
