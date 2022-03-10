@@ -73,9 +73,10 @@ EOF
     openorg () {
 	(
 	    f=$(sfdx force:org:open -r -u "$1")
+	    printf "%b\n" "$f"
 	    url=${f#*URL: }
 
-	    log printf "%b\n" "$url"
+	    printf "%b\n" "$url"
 
 	    for app in $browser
 	    do
