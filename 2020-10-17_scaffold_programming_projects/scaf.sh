@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 # put into /usr/local/bin as 'scaf' (scaffold) for use from command line
 # EITHER:
 # sudo install -o root -g root -m 0755 $thispath/$SHORT.sh /usr/local/bin/$SHORT
@@ -82,29 +82,24 @@ EOF
 
     # https://stackoverflow.com/questions/17983586/how-can-i-get-the-variable-value-inside-the-eof-tags/17983608#17983608
     template_script=$(cat <<\EOF
-#!/bin/sh
+#!/bin/sh -e
 scope ()
 (
 
     # ---------- VARIABLES -----------
+    . $HOME/scripts/util/ato-vars.sh
 
     # use $1, $2 etc after ARGPARSE under ARGUMENTS
 
-    script_path="$(dirname "$(readlink -e -- "$0")")"
-    script_name="$(basename "$0")"
-    num_args=1
-    logfile_name=/dev/null
-    runtime_dependencies="getopt awk"
-    export SUDO_ASKPASS="$(which ssh-askpass)"
-    unset quiet
-    unset distname
+    num_args_min=0
+    num_args_max=256
+    runtime_dependencies="dirname basename which cat getopt date awk"
+    runtime_dependencies_optional="ssh-askpass sudo nohup"
 
-    distname="$(awk -F'=' '/^ID=/ {print tolower($2)}' /etc/*-release)"
-
-    if [  "$distname" == "fedora" ]
-    then
-    elif [ "$distname" == "ubuntu" ]
-    then
+    if [  "$distname" = "fedora" ]
+    then :
+    elif [ "$distname" = "ubuntu" ]
+    then :
     fi
 
     # --------- HELP PAGE ------------
@@ -144,12 +139,7 @@ HELPAGE
 	    *)            printf "%b\\n" "Unexpected option: $1 - this should not happen.\\n$help" ; exit 2 ;;
 	esac
     done
-
-    if [ "$#" -ne "$num_args" ]
-    then
-	printf "%b\\n" "[ERROR] wrong number of arguments: should be $num_args\\n$help"
-	exit 2
-    fi
+    . $HOME/scripts/util/ato-flags.sh
 
     # ---------- ARGUMENTS -----------
 
@@ -164,45 +154,14 @@ TOKEN
 	)
 
     # ---------- FUNCTIONS -----------
+    . $HOME/scripts/util/ato-funcs.sh
 
-    hello () {
-	# printf "%b\\n" ""	# newline between log entries
-	printf "%b\\n" "[BEGIN] $(date -Iseconds) $script_path/$script_name"
-    }
-    log () {
-	if [ -n "$quiet" ]
-	then
-	    "$@" >> $logfile_name
-	else
-	    "$@" | tee -a $logfile_name
-	fi
-    }
-    check_for_app () {
-	for dep in $@
-	do
-	    if [ -n "$(which $dep)" ]
-	    then
-		printf "%b\\n" "found $dep"
-	    else
-		printf "%b\\n" "[ERROR] $dep not found, aborting"
-		exit
-	    fi
-	done
-    }
-    trysudo () {
-	if [ -n "$(getent group sudo | grep -o $USER)" ]
-	then
-	    sudo -A "$@"
-	else
-	    printf "%b\\n" "[WARN] $USER has no sudo rights: $@"
-	fi
-    }
+
 
     # ---------- MAIN ----------------
 
     main () {
-    	hello
-	check_for_app $runtime_dependencies
+	. $HOME/scripts/util/ato-main.sh
 
 	# . ./$SHORT-script.sh
 

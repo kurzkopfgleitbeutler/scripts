@@ -3,17 +3,14 @@ scope ()
 (
 
     # ---------- VARIABLES -----------
+    . $HOME/scripts/util/ato-vars.sh
 
     # use $1, $2 etc after ARGPARSE under ARGUMENTS
 
-    script_path="$(dirname "$(readlink -e -- "$0")")"
-    script_name="$(basename "$0")"
-    num_args=1
-    num_args2=2
-    logfile_name=/dev/null
+    num_args_min=1
+    num_args_max=2
     runtime_dependencies="getopt awk rofi"
     export SUDO_ASKPASS="$(which ssh-askpass)"
-    unset quiet
 
     # --------- HELP PAGE ------------
 
@@ -52,53 +49,15 @@ HELPAGE
 	    *)            printf "%b\n" "Unexpected option: $1 - this should not happen.\n$help" ; exit 2 ;;
 	esac
     done
-
-    if [ "$#" -ne "$num_args" ] && [ "$#" -ne "$num_args2" ]
-    then
-	printf "%b\n" "[ERROR] wrong number of arguments: should be $num_args or $num_args2\n$help"
-	exit 2
-    fi
+    . $HOME/scripts/util/ato-flags.sh
 
     # ---------- FUNCTIONS -----------
-
-    hello () {
-	# printf "%b\n" ""	# newline between log entries
-	printf "%b\n" "[BEGIN] $(date -Iseconds) $script_path/$script_name"
-    }
-    log () {
-	if [ -n "$quiet" ]
-	then
-	    "$@" >> $logfile_name
-	else
-	    "$@" | tee -a $logfile_name
-	fi
-    }
-    check_for_app () {
-	for dep in $@
-	do
-	    if [ -n "$(which $dep)" ]
-	    then
-		printf "%b\n" "found $dep"
-	    else
-		printf "%b\n" "[ERROR] $dep not found, aborting"
-		exit
-	    fi
-	done
-    }
-    trysudo () {
-	if [ -n "$(getent group sudo | grep -o $USER)" ]
-	then
-	    sudo -A "$@"
-	else
-	    printf "%b\n" "[WARN] $USER has no sudo rights: $@"
-	fi
-    }
+    . $HOME/scripts/util/ato-funcs.sh
 
     # ---------- MAIN ----------------
 
     main () {
-    	hello
-	check_for_app $runtime_dependencies
+	. $HOME/scripts/util/ato-main.sh
 
 	# sender -> message -> receiver
 	if [ "$#" = 2 ]
